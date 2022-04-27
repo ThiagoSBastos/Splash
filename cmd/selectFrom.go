@@ -29,10 +29,10 @@ var selectFromCmd = &cobra.Command{
 	Use:   "selectFrom",
 	Short: "Select tasks from the tasklist",
 	Long: `Select tasks from the tasklist that optimize the value of the sprint
-		   while meeting the target story-points. For example: <putAnExampleHere>.`,
+while meeting the target story-points.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// 1. Read from file
+
 		fileName := args[0]
 		var fileContents, err = os.ReadFile(fileName)
 		if err != nil {
@@ -40,32 +40,24 @@ var selectFromCmd = &cobra.Command{
 			return
 		}
 
-		// 2. Fill Backlog with JSON data
 		var backlog Backlog
 		json.Unmarshal([]byte(fileContents), &backlog)
-		fmt.Printf(
-			"TargetStoryPoints: %d\nTasks: %s\nStoryPoints: %d\nPriorities: %d\n",
-			backlog.TargetStoryPoints, backlog.Tasks, backlog.StoryPoints, backlog.Priorities,
-		)
 
-		// 3. Validate JSON
 		lenTasks := len(backlog.Tasks)
 		lenStoryPoints := len(backlog.StoryPoints)
 		lenPriorities := len(backlog.Priorities)
 		if lenTasks != lenStoryPoints && lenStoryPoints != lenPriorities {
-			fmt.Println("The tasks, story-points and pririties do not have the same size.")
+			fmt.Println("The tasks, story-points and priorities do not have the same size.")
 			fmt.Printf("Length of Tasks: %d\n", lenTasks)
 			fmt.Printf("Length of StoryPoints: %d\n", lenStoryPoints)
 			fmt.Printf("Length of Priorities: %d\n", lenPriorities)
 			return
 		}
 
-		// TODO: 4. Analyze
 		sprint := findOptimalSolution(backlog)
 
-		// TODO: 5. Give feedback upon finishing analysis and having results
 		fmt.Printf(
-			"TotalStoryPoints: %d\nTasks: %s\nStoryPoints: %d\nPriorities: %d\n",
+			"Sprint: \n TotalStoryPoints: %d\n Tasks: %s\n StoryPoints: %d\n Priorities: %d\n",
 			sprint.TotalStoryPoints, sprint.Tasks, sprint.StoryPoints, sprint.Priorities,
 		)
 	},
@@ -75,31 +67,32 @@ func init() {
 	rootCmd.AddCommand(selectFromCmd)
 }
 
-// Solves the knapsack problem using dynamic programming
+// Finds the optimal combination of tasks within a sprint by modeling the
+// problem as a 0/1 knapsack problem. The procedure for finding the solution
+// uses the dynamic programming version of the algorithm.
 func findOptimalSolution(backlog Backlog) Sprint {
 	numberOfTasks := len(backlog.Tasks)
 	maxStoryPoints := backlog.TargetStoryPoints
 
-	// 1. construct a values and a areKept tables
-	values := make([][]int, numberOfTasks+1) // row with the 'items' to pick
+	values := make([][]int, numberOfTasks+1)
 	areKept := make([][]bool, numberOfTasks+1)
 	for i := 0; i < numberOfTasks+1; i++ {
-		values[i] = make([]int, maxStoryPoints+1) // column with the 'weights'
+		values[i] = make([]int, maxStoryPoints+1)
 		areKept[i] = make([]bool, maxStoryPoints+1)
 	}
 
-	// 2a. Base case: no items in the 'knapsack'
+	// Base case: no tasks in the sprint
 	for j := 0; j < maxStoryPoints+1; j++ {
 		values[0][j] = 0
 		areKept[0][j] = false
 	}
-	// 2b. Base case: knapsack with no weight
+	// Base case: sprint with no story-points
 	for i := 0; i < numberOfTasks+1; i++ {
 		values[i][0] = 0
 		areKept[i][0] = false
 	}
 
-	// 3. Fill tables with the values
+	// Optimization procedure
 	for i := 1; i <= numberOfTasks; i++ {
 		for j := 1; j <= maxStoryPoints; j++ {
 
@@ -121,19 +114,17 @@ func findOptimalSolution(backlog Backlog) Sprint {
 		}
 	}
 
-	// 4. Retrieve the indices of the values that give the optimal solution
-	n := numberOfTasks
-	c := maxStoryPoints
+	i := numberOfTasks
+	j := maxStoryPoints
 	var indices []int
-	for n > 0 {
-		if areKept[n][c] {
-			indices = append(indices, n-1)
-			c -= backlog.StoryPoints[n-1]
+	for i > 0 {
+		if areKept[i][j] {
+			indices = append(indices, i-1)
+			j -= backlog.StoryPoints[i-1]
 		}
-		n--
+		i--
 	}
 
-	// 5. Fill the solution data structure
 	var sprint Sprint
 	sprint.TotalStoryPoints = 0
 
