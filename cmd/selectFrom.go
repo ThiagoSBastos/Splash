@@ -26,7 +26,7 @@ type Sprint struct {
 }
 
 var selectFromCmd = &cobra.Command{
-	Use:   "selectFrom",
+	Use:   "selectFrom <path_to_json_file>",
 	Short: "Select tasks from the tasklist",
 	Long: `Select tasks from the tasklist that optimize the value of the sprint
 while meeting the target story-points.`,
@@ -48,15 +48,16 @@ while meeting the target story-points.`,
 		lenPriorities := len(backlog.Priorities)
 		if lenTasks != lenStoryPoints && lenStoryPoints != lenPriorities {
 			fmt.Println("The tasks, story-points and priorities do not have the same size.")
-			fmt.Printf("Length of Tasks: %d\n", lenTasks)
-			fmt.Printf("Length of StoryPoints: %d\n", lenStoryPoints)
-			fmt.Printf("Length of Priorities: %d\n", lenPriorities)
+			fmt.Fprintf(cmd.OutOrStdout(), "Length of Tasks: %d\n", lenTasks)
+			fmt.Fprintf(cmd.OutOrStdout(), "Length of StoryPoints: %d\n", lenStoryPoints)
+			fmt.Fprintf(cmd.OutOrStdout(), "Length of Priorities: %d\n", lenPriorities)
 			return
 		}
 
 		sprint := findOptimalSolution(backlog)
 
-		fmt.Printf(
+		fmt.Fprintf(
+			cmd.OutOrStdout(),
 			"Sprint: \n TotalStoryPoints: %d\n Tasks: %s\n StoryPoints: %d\n Priorities: %d\n",
 			sprint.TotalStoryPoints, sprint.Tasks, sprint.StoryPoints, sprint.Priorities,
 		)
