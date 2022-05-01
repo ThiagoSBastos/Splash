@@ -9,7 +9,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "splash-cli",
+	Use:   "Splash",
 	Short: "A Sprint Planning CLI written in Go",
 	Long:  `A Sprint Planning CLI written in Go.`,
 }
